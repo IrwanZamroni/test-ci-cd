@@ -3,7 +3,7 @@ name: Deploy Angular App
 on:
   push:
     branches:
-      - main   # change if needed
+      - main
 
 jobs:
   deploy:
@@ -19,11 +19,20 @@ jobs:
           port: 22
 
           script: |
-            
-            echo "Pull latest code..."
-            git pull origin master
+            APP_DIR="/home/${{ secrets.VPS_USERNAME }}/test-ci-cd/angular-tour-of-heroes"
+            REPO_URL="https://github.com/IrwanZamroni/test-ci-cd.git"
 
-            cd test-ci-cd/angular-tour-of-heroes
+            echo "Check if project exists..."
+            if [ ! -d "$APP_DIR" ]; then
+              echo "Cloning repository..."
+              git clone $REPO_URL $APP_DIR
+            fi
+
+            echo "Go to project folder..."
+            cd $APP_DIR || exit
+
+            echo "Pull latest code..."
+            git pull origin main
 
             echo "Install dependencies..."
             npm install
@@ -31,7 +40,10 @@ jobs:
             echo "Build Angular app..."
             npm run build -- --configuration production
 
-            echo "Restart service (if using pm2 or similar)..."
-            pm2 restart all || true
+            echo "Restart PM2 app..."
+            pm2 delete angular-app || true
+            pm2 start serve --name angular-app -- -s dist/angular-tour-of-heroes -l 3000
+
+            pm2 save
 
             echo "Deploy complete!"
