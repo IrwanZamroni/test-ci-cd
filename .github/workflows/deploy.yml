@@ -23,7 +23,7 @@ jobs:
             echo "Pull latest code..."
             git pull origin master
 
-            cd angular-tour-of-heroes
+            cd test-ci-cd/angular-tour-of-heroes
 
             echo "Install dependencies..."
             npm install
