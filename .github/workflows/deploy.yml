@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
+      - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -19,33 +19,45 @@ jobs:
           port: 22
 
           script: |
+            set -e
+
             APP_DIR="/home/${{ secrets.VPS_USERNAME }}/test-ci-cd"
             REPO_URL="https://github.com/IrwanZamroni/test-ci-cd.git"
 
-            echo "Check if repo exists..."
-            if [ ! -d "$APP_DIR" ]; then
+            echo "===== PREPARE PROJECT ====="
+
+            # 🔥 FIX: ensure valid git repo
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "Cleaning old/broken folder..."
+              rm -rf $APP_DIR
+
+              echo "Cloning fresh repo..."
               git clone $REPO_URL $APP_DIR
             fi
 
-            echo "Go to repo..."
-            cd $APP_DIR || exit
+            echo "===== ENTER REPO ====="
+            cd $APP_DIR
 
-            echo "Pull latest code..."
-            git pull origin main
+            echo "===== PULL LATEST CODE ====="
+            git fetch origin
+            git reset --hard origin/main
 
-            echo "Go to Angular project..."
-            cd angular-tour-of-heroes || exit
+            echo "===== ENTER ANGULAR PROJECT ====="
+            cd angular-tour-of-heroes
 
-            echo "Install dependencies..."
+            echo "===== INSTALL DEPENDENCIES ====="
             npm install
 
-            echo "Build Angular app..."
+            echo "===== BUILD ANGULAR ====="
             npm run build -- --configuration production
 
-            echo "Restart PM2..."
+            echo "===== ENSURE SERVE INSTALLED ====="
+            npm list -g serve || npm install -g serve
+
+            echo "===== RESTART PM2 ====="
             pm2 delete angular-app || true
             pm2 start serve --name angular-app -- -s dist/angular-tour-of-heroes -l 3000
 
             pm2 save
 
-            echo "Deploy complete!"
+            echo "===== DEPLOY SUCCESS ====="
