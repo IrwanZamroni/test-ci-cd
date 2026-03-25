@@ -19,10 +19,11 @@ jobs:
           port: 22
 
           script: |
-            cd /path/to/your/angular/app
-
+            
             echo "Pull latest code..."
             git pull origin master
+
+            cd angular-tour-of-heroes
 
             echo "Install dependencies..."
             npm install
