@@ -3,7 +3,7 @@ name: Deploy Angular App
 on:
   push:
     branches:
-      - master   # change if needed
+      - main   # change if needed
 
 jobs:
   deploy:
